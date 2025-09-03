@@ -16,6 +16,7 @@ init_db()
 
 RESULTS_PER_PAGE = 5
 
+# কীবোর্ড তৈরি
 def build_keyboard(results, page):
     start = page * RESULTS_PER_PAGE
     end = start + RESULTS_PER_PAGE
@@ -34,15 +35,23 @@ def build_keyboard(results, page):
 
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
+# /start কমান্ড
 @dp.message(Command("start"))
 async def start_cmd(message: types.Message):
     await message.answer("👋 Welcome! মুভির নাম লিখে সার্চ করুন।")
 
-user_search = {}  # store user's last search results
+# ইউজারের সার্চ সংরক্ষণ
+user_search = {}
 
+# সার্চ হ্যান্ডলার
 @dp.message()
 async def search_handler(message: types.Message):
-    query = message.text.strip()
+    # NoneType error এড়াতে সেফ চেক
+    query = (message.text or "").strip()
+    if not query:
+        await message.answer("⚠️ শুধু টেক্সট মেসেজ পাঠান (মুভির নাম লিখুন)।")
+        return
+
     results = search_movies(query)
     if not results:
         await message.answer("❌ কোনো ভিডিও পাওয়া যায়নি।")
@@ -54,9 +63,12 @@ async def search_handler(message: types.Message):
 
     # 2 মিনিট পরে delete
     await asyncio.sleep(120)
-    try: await msg.delete()
-    except: pass
+    try:
+        await msg.delete()
+    except:
+        pass
 
+# Callback হ্যান্ডলার
 @dp.callback_query()
 async def callback_handler(callback: types.CallbackQuery):
     data = callback.data
@@ -88,11 +100,14 @@ async def callback_handler(callback: types.CallbackQuery):
 
         # 6 দিন পরে auto delete
         await asyncio.sleep(518400)
-        try: await bot.delete_message(uid, sent.message_id)
-        except: pass
+        try:
+            await bot.delete_message(uid, sent.message_id)
+        except:
+            pass
 
         await callback.answer()
 
+# মেইন লুপ
 async def main():
     await dp.start_polling(bot)
 
