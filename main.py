@@ -2,9 +2,10 @@ import asyncio, random
 from aiogram import Bot, Dispatcher, types
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.filters import Command
+import spacy
 
 from ads import ad_links
-from database import init_db, search_movies
+from database import init_db, search_movies  # search_movies() এখন সব মুভি return করবে
 
 API_TOKEN = "8210471056:AAEc76RNEX1w32M7WfyY3R8uKzEBy4aOb8s"
 CHANNEL_ID = -1002912984408  # চ্যানেল ID (number)
@@ -15,6 +16,9 @@ dp = Dispatcher()
 init_db()
 
 RESULTS_PER_PAGE = 5
+
+# spaCy language model
+nlp = spacy.load("en_core_web_sm")
 
 # কীবোর্ড তৈরি
 def build_keyboard(results, page):
@@ -46,13 +50,26 @@ user_search = {}
 # সার্চ হ্যান্ডলার
 @dp.message()
 async def search_handler(message: types.Message):
-    # NoneType error এড়াতে সেফ চেক
     query = (message.text or "").strip()
     if not query:
         await message.answer("⚠️ শুধু টেক্সট মেসেজ পাঠান (মুভির নাম লিখুন)।")
         return
 
-    results = search_movies(query)
+    # spaCy দিয়ে tokenization + lemmatization + lowercase
+    query_tokens = [token.lemma_.lower() for token in nlp(query)]
+
+    # ডাটাবেস থেকে সব মুভি
+    all_movies = search_movies()
+    results = []
+
+    for movie in all_movies:
+        movie_name = movie[1]  # ধরে নিচ্ছি movie[1] হলো movie name
+        movie_tokens = [token.lemma_.lower() for token in nlp(movie_name)]
+
+        # ইউজারের query tokens মুভি নামের সাথে মেলে কি না
+        if any(token in movie_tokens for token in query_tokens):
+            results.append(movie)
+
     if not results:
         await message.answer("❌ কোনো ভিডিও পাওয়া যায়নি।")
         return
