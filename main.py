@@ -1,3 +1,4 @@
+# main.py
 import asyncio, random
 from aiogram import Bot, Dispatcher, types
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
@@ -5,7 +6,7 @@ from aiogram.filters import Command
 import spacy
 
 from ads import ad_links
-from database import init_db, search_movies  # search_movies() এখন সব মুভি return করবে
+from database import init_db, search_movies, add_movie
 
 API_TOKEN = "8210471056:AAEc76RNEX1w32M7WfyY3R8uKzEBy4aOb8s"
 CHANNEL_ID = -1002912984408  # চ্যানেল ID (number)
@@ -27,7 +28,7 @@ def build_keyboard(results, page):
     keyboard = []
 
     for r in results[start:end]:
-        keyboard.append([InlineKeyboardButton(text=r[1], callback_data=f"video_{r[2]}")])
+        keyboard.append([InlineKeyboardButton(text=r["name"], callback_data=f"video_{r['message_id']}")])
 
     nav_buttons = []
     if page > 0:
@@ -63,10 +64,9 @@ async def search_handler(message: types.Message):
     results = []
 
     for movie in all_movies:
-        movie_name = movie[1]  # ধরে নিচ্ছি movie[1] হলো movie name
+        movie_name = movie["name"]
         movie_tokens = [token.lemma_.lower() for token in nlp(movie_name)]
 
-        # ইউজারের query tokens মুভি নামের সাথে মেলে কি না
         if any(token in movie_tokens for token in query_tokens):
             results.append(movie)
 
@@ -124,8 +124,20 @@ async def callback_handler(callback: types.CallbackQuery):
 
         await callback.answer()
 
+# নতুন মুভি যোগ করার উদাহরণ
+def seed_movies():
+    movies = [
+        ("Spider Man 1", 101),
+        ("Spider Man 2", 102),
+        ("Spider Man 3", 103),
+    ]
+    for title, message_id in movies:
+        add_movie(title, message_id)
+        print(f"✅ Added: {title}")
+
 # মেইন লুপ
 async def main():
+    # seed_movies()  # Uncomment করলে ডাটাবেসে প্রথমে ডাটা যোগ হবে
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
