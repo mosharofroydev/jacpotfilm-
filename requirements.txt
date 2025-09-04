@@ -1,2 +1,3 @@
 aiogram==3.4.1
 spacy==3.4.4
+pymongo
