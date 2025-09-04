@@ -1,33 +1,28 @@
-import sqlite3
+# database.py
+from pymongo import MongoClient
 
-DB_NAME = "movies.db"
+MONGO_URI = "mongodb+srv://banglajac13_db_user:ZGTKOUJTJloOFFQS@cluster0.wdbssln.mongodb.net/?retryWrites=true&w=majority"
+
+client = MongoClient(MONGO_URI)
+db = client["movieDB"]  # DB নাম
+movies_collection = db["movies"]  # collection নাম
 
 def init_db():
-    conn = sqlite3.connect(DB_NAME)
-    c = conn.cursor()
-    c.execute("""
-        CREATE TABLE IF NOT EXISTS movies (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT,
-            channel_message_id INTEGER
-        )
-    """)
-    conn.commit()
-    conn.close()
+    print("✅ MongoDB Connected")
 
-def add_movie(title, channel_message_id):
-    conn = sqlite3.connect(DB_NAME)
-    c = conn.cursor()
-    c.execute("INSERT INTO movies (title, channel_message_id) VALUES (?, ?)",
-              (title, channel_message_id))
-    conn.commit()
-    conn.close()
+def add_movie(title, message_id):
+    """
+    নতুন মুভি MongoDB তে যোগ করবে
+    """
+    doc = {
+        "name": title,
+        "message_id": message_id
+    }
+    result = movies_collection.insert_one(doc)
+    return result.inserted_id
 
-def search_movies(query):
-    conn = sqlite3.connect(DB_NAME)
-    c = conn.cursor()
-    c.execute("SELECT id, title, channel_message_id FROM movies WHERE title LIKE ?", 
-              (f"%{query}%",))
-    results = c.fetchall()
-    conn.close()
-    return results
+def search_movies():
+    """
+    সব মুভি রিটার্ন করবে
+    """
+    return list(movies_collection.find({}, {"_id": 1, "name": 1, "message_id": 1}))
