@@ -1,7 +1,9 @@
+# main.py
+import asyncio
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-import asyncio
-from motor.motor_asyncio import AsyncIOMotorClient
+from database import search_movies
+from ads import random_ad
 
 # 🛠 API ও Bot Token
 API_ID = 24776633
@@ -10,11 +12,6 @@ BOT_TOKEN = "8210471056:AAEc76RNEX1w32M7WfyY3R8uKzEBy4aOb8"
 
 # 🛠 চ্যানেল ID
 SOURCE_CHANNEL = -1003002438395
-
-# 🛠 MongoDB সংযোগ
-MONGO_URL = "mongodb+srv://banglajac13_db_user:ZGTKOUJTJloOFFQS@cluster0.wdbssln.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
-mongo_client = AsyncIOMotorClient(MONGO_URL)
-db = mongo_client["search_bot_db"]  # ডাটাবেস
 
 # 🔹 Pyrogram Client
 app = Client("search_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
@@ -26,20 +23,22 @@ async def start(client, message):
         f"👋 হ্যালো **{message.from_user.first_name}**!\n\n"
         "আমি একটি সার্চ বট। 🎬\n"
         "👉 শুধু মুভির নাম লিখুন, আমি ফাইল খুঁজে দেব।\n\n"
-        "📌 উদাহরণ: `KGF`"
+        "📌 উদাহরণ: `KGF`\n\n"
+        f"{random_ad()}"
     )
 
 # 🔹 সার্চ ফাইল
 @app.on_message(filters.text & ~filters.command("start"))
 async def search_files(client, message):
-    query = message.text.lower()
+    query = message.text.strip()
     results = []
 
-    async for msg in app.search_messages(chat_id=SOURCE_CHANNEL, query=query, limit=5):
-        # ডকুমেন্ট, ভিডিও বা অডিও হলে
-        if msg.document or msg.video or msg.audio:
-            file_name = getattr(msg.document or msg.video or msg.audio, "file_name", "ফাইল")
-            results.append([InlineKeyboardButton(file_name, callback_data=f"get_{msg.id}")])
+    movies_found = await search_movies(query)
+
+    for movie in movies_found:
+        msg_id = movie["message_id"]
+        file_name = movie["name"]
+        results.append([InlineKeyboardButton(file_name, callback_data=f"get_{msg_id}")])
 
     if results:
         sent_msg = await message.reply(
@@ -53,7 +52,7 @@ async def search_files(client, message):
         except:
             pass
     else:
-        await message.reply("❌ কিছু পাওয়া যায়নি।")
+        await message.reply("❌ কিছু পাওয়া যায়নি।\n" + random_ad())
 
 # 🔹 Callback ফাংশন
 @app.on_callback_query(filters.regex(r"^get_"))
