@@ -1,4 +1,1 @@
-pyrogram
-tgcrypto
-pymongo   # যদি MongoDB ব্যবহার করেন (optional)
 
