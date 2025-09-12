@@ -1,17 +1,20 @@
-class Config:
-    # Bot
-    BOT_TOKEN = "8210471056:AAEc76RNEX1w32M7WfyY3R8uKzEBy4aOb8spp"
-    ADMINS = [7170990925]
+import os
+from dotenv import load_dotenv
 
-    # Database
-    DATABASE_URL = "mongodb+srv://test:hvM1kLeXCCSXXb1u@cluster0.mrfgvxy.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+load_dotenv()
 
-    # Messages
-    START_MSG = """👋 হ্যালো {name}!
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+API_ID = int(os.getenv("API_ID"))
+API_HASH = os.getenv("API_HASH")
+MONGO_URI = os.getenv("MONGO_URI")
 
-আমি Auto Filter Bot 🎬
+FILE_STORE_CHANNEL = int(os.getenv("FILE_STORE_CHANNEL"))
+LOG_CHANNEL = int(os.getenv("LOG_CHANNEL", "0"))
 
-Inline button দিয়ে সিনেমার ভিডিও সরাসরি পাবেন।  
-আপনার গ্রুপে সিনেমা search করতে নাম লিখুন।  
-"""
-    DELETE_AFTER_DAYS = 5
+BRAND_NAME = os.getenv("BRAND_NAME")
+BRAND_LINK = os.getenv("BRAND_LINK")
+
+AUTO_DELETE_SECONDS = int(os.getenv("AUTO_DELETE_SECONDS"))
+USER_VIDEO_LIFETIME_DAYS = int(os.getenv("USER_VIDEO_LIFETIME_DAYS"))
+
+OWNER_IDS = [int(x) for x in os.getenv("OWNER_IDS", "").split(",") if x]
