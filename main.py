@@ -88,7 +88,6 @@ async def inline_search(client, inline_query):
     ads = get_ads_for_query(q, max_ads=1)
     answers = []
 
-    # Sponsored Ad result at top
     if ads:
         ad = ads[0]
         ad_id = f"ad-{ad['id']}-{uuid.uuid4().hex[:6]}"
@@ -105,7 +104,6 @@ async def inline_search(client, inline_query):
         )
         answers.append(ad_result)
 
-    # Sponsor button for all results
     sponsor_button = None
     if ads:
         sponsor_button = InlineKeyboardButton(ads[0]["button_text"], url=ads[0]["button_url"])
@@ -153,7 +151,7 @@ async def on_getfile(client, cq):
         cq.from_user.id,
         video=temp,
         caption=f"{doc.get('file_name','')}\n\n{BRAND_NAME}",
-        protect_content=True  # forward/copy disabled
+        protect_content=True
     )
 
     delete_at = datetime.datetime.utcnow() + datetime.timedelta(days=USER_VIDEO_LIFETIME_DAYS)
@@ -186,9 +184,18 @@ async def start_msg(client, message):
 # ----------------------------
 # Run Bot
 # ----------------------------
-if __name__ == "__main__":
-    app.start()
-    loop = asyncio.get_event_loop()
-    loop.create_task(cleanup_loop())
+async def main():
+    await app.start()
     print("Bot started")
-    app.idle()
+    asyncio.create_task(cleanup_loop())
+    # Replit বা অন্য সার্ভার উভয়ের জন্য বট চালু রাখে
+    while True:
+        await asyncio.sleep(1)
+
+if __name__ == "__main__":
+    try:
+        asyncio.run(main())
+    except RuntimeError:
+        # যদি already running event loop থাকে (Replit/Jupyter)
+        loop = asyncio.get_event_loop()
+        loop.create_task(main())                
